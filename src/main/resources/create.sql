@@ -16,3 +16,18 @@ CREATE TABLE Vaccines (
     Doses int,
     PRIMARY KEY (Name)
 );
+
+CREATE TABLE Patient (
+    Username varchar(255),
+    Salt BINARY(16),
+    Hash BINARY(16),
+    PRIMARY KEY (Username)
+);
+
+CREATE TABLE Appointments (
+    Appointmet_ID VARCHAR(100) PRIMARY KEY,
+    Patient_Username varchar(255) REFERENCES Patient,
+    Caregiver_Username varchar(255) REFERENCES Caregivers,
+    Time date,
+    Vaccine_Name varchar(255) REFERENCES Vaccines,
+)
