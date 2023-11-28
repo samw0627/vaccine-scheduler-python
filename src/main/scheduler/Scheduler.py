@@ -201,7 +201,24 @@ def login_caregiver(tokens):
         print("Logged in as: " + username)
         current_caregiver = caregiver
 
-
+def printCommand():
+        print()
+        print(" *** Please enter one of the following commands *** ")
+        print("> create_patient <username> <password>")  # //TODO: implement create_patient (Part 1)
+        print("> create_caregiver <username> <password>")
+        print("> login_patient <username> <password>")  # // TODO: implement login_patient (Part 1)
+        print("> login_caregiver <username> <password>")
+        print("> search_caregiver_schedule <date>")  # // TODO: implement search_caregiver_schedule (Part 2)
+        print("> reserve <date> <vaccine>")  # // TODO: implement reserve (Part 2)
+        print("> upload_availability <date>")
+        print("> cancel <appointment_id>")  # // TODO: implement cancel (extra credit)
+        print("> add_doses <vaccine> <number>")
+        print("> show_appointments")  # // TODO: implement show_appointments (Part 2)
+        print("> logout")  # // TODO: implement logout (Part 2)
+        print("> Quit")
+        print()
+        return
+    
 def search_caregiver_schedule(tokens):
     """
     TODO: Part 2
@@ -364,12 +381,20 @@ def start():
         operation = tokens[0]
         if operation == "create_patient":
             create_patient(tokens)
+            printCommand()
+            
         elif operation == "create_caregiver":
             create_caregiver(tokens)
+            printCommand()
+
         elif operation == "login_patient":
             login_patient(tokens)
+            printCommand()
+
         elif operation == "login_caregiver":
             login_caregiver(tokens)
+            printCommand()
+            
         elif operation == "search_caregiver_schedule":
             search_caregiver_schedule(tokens)
         elif operation == "reserve":

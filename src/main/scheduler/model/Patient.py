@@ -12,6 +12,24 @@ class Patient:
         self.salt = salt
         self.hash = hash
 
+      def printCommand():
+        print()
+        print(" *** Please enter one of the following commands *** ")
+        print("> create_patient <username> <password>")  # //TODO: implement create_patient (Part 1)
+        print("> create_caregiver <username> <password>")
+        print("> login_patient <username> <password>")  # // TODO: implement login_patient (Part 1)
+        print("> login_caregiver <username> <password>")
+        print("> search_caregiver_schedule <date>")  # // TODO: implement search_caregiver_schedule (Part 2)
+        print("> reserve <date> <vaccine>")  # // TODO: implement reserve (Part 2)
+        print("> upload_availability <date>")
+        print("> cancel <appointment_id>")  # // TODO: implement cancel (extra credit)
+        print("> add_doses <vaccine> <number>")
+        print("> show_appointments")  # // TODO: implement show_appointments (Part 2)
+        print("> logout")  # // TODO: implement logout (Part 2)
+        print("> Quit")
+        print()
+        return
+      
     # getters
       def get(self):
         cm = ConnectionManager()
@@ -26,7 +44,7 @@ class Patient:
                 curr_hash = row['Hash']
                 calculated_hash = Util.generate_hash(self.password, curr_salt)
                 if not curr_hash == calculated_hash:
-                    # print("Incorrect password")
+                    print("Incorrect password")
                     cm.close_connection()
                     return None
                 else:
