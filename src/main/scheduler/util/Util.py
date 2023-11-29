@@ -1,6 +1,7 @@
 import hashlib
 import os
-
+import random
+import string
 
 class Util:
     def generate_salt():
@@ -15,3 +16,6 @@ class Util:
             dklen=16
         )
         return key
+    
+    def generate_appointment_id():
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))

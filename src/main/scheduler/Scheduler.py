@@ -5,6 +5,8 @@ from util.Util import Util
 from db.ConnectionManager import ConnectionManager
 import pymssql
 import datetime
+import string
+import random
 
 
 '''
@@ -220,18 +222,109 @@ def printCommand():
         return
     
 def search_caregiver_schedule(tokens):
-    """
-    TODO: Part 2
-    """
-    pass
+    cm = ConnectionManager()
+    conn = cm.create_connection()
+    cursor = conn.cursor()
 
+    global current_caregiver
+    global current_patient
+    if current_caregiver is None and current_patient is None:
+        print("Please login first!")
+        return
+    if len(tokens) != 2:
+        print("Please try again! You need to enter a date.")
+        return
+    date = tokens[1]
+    # assume input is hyphenated in the format mm-dd-yyyy
+    date_tokens = date.split("-")
+    month = int(date_tokens[0])
+    day = int(date_tokens[1])
+    year = int(date_tokens[2])
+    d = datetime.datetime(year, month, day)
+
+    search_schedule = "SELECT Username FROM Availabilities WHERE TIME = %s"
+    search_vaccine = "SELECT * FROM Vaccines WHERE Doses > 0"
+    try:
+        cursor.execute(search_schedule, d)
+        print("Caregivers Available:")
+        for row in cursor:
+            print(row)
+        print('\n')
+        cursor.execute(search_vaccine)
+        print("Vaccines Available:")
+        for row in cursor:
+            print(row)
+    except pymssql.Error:
+            print("Please try again! Database error occurred.")
+            return
+    finally:
+            cm.close_connection()
+    
 
 def reserve(tokens):
-    """
-    TODO: Part 2
-    """
-    pass
+    global current_patient
+    if current_patient is None:
+        print("Please login as a patient first!")
+        return
+    #extract date and vaccine from tokens
+    if len(tokens) != 3:
+        print("Please try again! You need to enter a date and vaccine.")
+        return
+    date = tokens[1]
+    vaccine = tokens[2]
+     # assume input is hyphenated in the format mm-dd-yyyy
+    date_tokens = date.split("-")
+    month = int(date_tokens[0])
+    day = int(date_tokens[1])
+    year = int(date_tokens[2])
+    d = datetime.datetime(year, month, day)
+    #check if there are available caregivers at that time
+    cm = ConnectionManager()
+    conn = cm.create_connection()
+    cursor = conn.cursor()
+    
+    search_schedule = "SELECT Username FROM Availabilities WHERE TIME = %s ORDER BY Username ASC"
+    try:
+        cursor.execute(search_schedule, d)
+        if cursor.rowcount == 0:
+            print("No caregivers available at that time.")
+            return
+        #Extract the first row of the cursor
+        row = cursor.fetchone()
+        caregiver = row[0]
+        print("Caregiver: " + caregiver)
 
+        #check if there are available vaccines
+        search_vaccine = "SELECT Name FROM Vaccines WHERE Name = %s AND Doses > 0"
+        cursor.execute(search_vaccine, vaccine)
+        if cursor.rowcount == 0:
+            print("Not enough available doses!")
+            return
+        
+        #decrement the number of doses available
+        decrement_vaccine = "UPDATE Vaccines SET Doses = Doses - 1 WHERE Name = %s"
+        cursor.execute(decrement_vaccine, vaccine)
+
+        #remove the avaiability of the caregiver  of tht date on the database
+        remove_availability = "DELETE FROM Availabilities WHERE Username = %s AND TIME = %s"
+        cursor.execute(remove_availability, (caregiver, d))
+
+        #generate a 5 digit appointment id
+        appointment_id = Util.generate_appointment_id()
+        print("Appointment ID: " + appointment_id)
+        
+        #add the appointment to the database
+        add_appointment = "INSERT INTO Appointments VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(add_appointment, (appointment_id, current_patient.get_username(), caregiver, d, vaccine))
+        conn.commit()
+        print("Appointment created!")
+        print("Appointment ID: " + appointment_id + ", Caregiver Username: " + caregiver)
+    except pymssql.Error:
+            print("Please try again! Database error occurred.")
+            return
+    
+    finally:
+            cm.close_connection()
 
 def upload_availability(tokens):
     #  upload_availability <date>
@@ -394,21 +487,28 @@ def start():
         elif operation == "login_caregiver":
             login_caregiver(tokens)
             printCommand()
-            
+
         elif operation == "search_caregiver_schedule":
             search_caregiver_schedule(tokens)
+            printCommand()
         elif operation == "reserve":
             reserve(tokens)
+            printCommand()
         elif operation == "upload_availability":
             upload_availability(tokens)
+            printCommand()
         elif operation == cancel:
             cancel(tokens)
+            printCommand()
         elif operation == "add_doses":
             add_doses(tokens)
+            printCommand()
         elif operation == "show_appointments":
             show_appointments(tokens)
+            printCommand()
         elif operation == "logout":
             logout(tokens)
+            printCommand()
         elif operation == "quit":
             print("Bye!")
             stop = True
