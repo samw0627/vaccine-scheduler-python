@@ -272,11 +272,36 @@ def reserve(tokens):
         return
     date = tokens[1]
     vaccine = tokens[2]
+
+    #Check if date includes hyphen, if not, print error
+    if date.find("-") == -1:
+        print("Please try again! You need to enter a date in the format mm-dd-yyyy.")
+        return
      # assume input is hyphenated in the format mm-dd-yyyy
     date_tokens = date.split("-")
     month = int(date_tokens[0])
     day = int(date_tokens[1])
     year = int(date_tokens[2])
+
+    #Check if date is in the format of mm-dd-yyyy
+    if len(date_tokens) != 3:
+        print("Please try again! You need to enter a date in the format mm-dd-yyyy.")
+        return
+    elif month > 12 or month < 1:
+        print("Please try again! You entered an invalid month.")
+        return
+    elif day > 31 or day < 1:
+        print("Please try again! You entered an invalid day.")
+        return
+    elif year < 2023:
+        print("Please try again! You entered an invalid year.")
+        return
+    
+    #Check if date is in the past
+    if datetime.datetime(year, month, day) < datetime.datetime.now():
+        print("Please try again! You entered a date in the past.")
+        return
+    
     d = datetime.datetime(year, month, day)
     #check if there are available caregivers at that time
     cm = ConnectionManager()
@@ -426,17 +451,75 @@ def add_doses(tokens):
 
 
 def show_appointments(tokens):
-    '''
-    TODO: Part 2
-    '''
-    pass
+    global current_patient
+    global current_caregiver
+
+    if len(tokens) != 1:
+        print("Number of Argument Incorrect. Please try again!")
+        return
+    
+    if current_patient is None and current_caregiver is None:
+        print("Please login first!")
+        return
+    
+    cm = ConnectionManager()
+    conn = cm.create_connection()
+    cursor = conn.cursor()
+    
+    #if the current user is a patient, fetch all appointments for that patient
+    if current_patient is not None:
+        search_appointments = "SELECT Appointmet_ID , Vaccine_Name, Time, Patient_Username FROM Appointments WHERE Patient_Username = %s ORDER BY Appointmet_ID ASC"
+        print("Fetching Appointment for" + current_patient.get_username())
+
+        try:
+            cursor.execute(search_appointments, current_patient.get_username())
+            print("Appointments:")
+            for row in cursor:
+                print(row)
+        except pymssql.Error:
+            print("Please try again! Database error occurred.")
+            return
+        finally:
+            cm.close_connection()
+            return
+        
+    #if the current user is a caregiver, fetch all appointments for that caregiver
+    if current_caregiver is not None:
+        search_appointments = "SELECT Appointmet_ID , Vaccine_Name, Time, Caregiver_Username FROM Appointments WHERE Caregiver_Username = %s ORDER BY Appointmet_ID ASC"
+        print("Fetching Appointment for " + current_caregiver.get_username())
+        try:
+            cursor.execute(search_appointments, current_caregiver.get_username())
+            print("Appointments:")
+            for row in cursor:
+                print(row)
+        except pymssql.Error:
+            print("Please try again! Database error occurred.")
+            return
+        finally:
+            cm.close_connection()
+            return
 
 
 def logout(tokens):
-    """
-    TODO: Part 2
-    """
-    pass
+    #If user is not logged in, print Please Login First
+    if len(tokens) != 1:
+        print("Number of Argument Incorrect. Please try again!")
+        return
+    
+    global current_patient
+    global current_caregiver
+    if current_patient is None and current_caregiver is None:
+        print("Please login first!")
+        return
+    #If user is logged in, print Successfully Logged Out
+    if current_patient is not None :
+        current_patient = None
+        print("Successfully Logged Out")
+        return
+    if current_caregiver is not None :
+        current_caregiver = None
+        print ("Successfully Logged Out")
+        return
 
 
 def start():
