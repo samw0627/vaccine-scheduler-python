@@ -242,6 +242,21 @@ def search_caregiver_schedule(tokens):
     year = int(date_tokens[2])
     d = datetime.datetime(year, month, day)
 
+        #Check if date is in the format of mm-dd-yyyy
+    if len(date_tokens) != 3:
+        print("Please try again! You need to enter a date in the format mm-dd-yyyy.")
+        return
+    elif month > 12 or month < 1:
+        print("Please try again! You entered an invalid month.")
+        return
+    elif day > 31 or day < 1:
+        print("Please try again! You entered an invalid day.")
+        return
+    elif year < 2023:
+        print("Please try again! You entered an invalid year.")
+        return
+    
+
     search_schedule = "SELECT Username FROM Availabilities WHERE TIME = %s"
     search_vaccine = "SELECT * FROM Vaccines WHERE Doses > 0"
     try:
