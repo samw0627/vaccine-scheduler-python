@@ -19,9 +19,37 @@ current_patient = None
 current_caregiver = None
 
 
+def passwarod_checker(password):
+    #Checks password based on the following criteria:
+    #1. Password must be at least 8 characters long
+    #2. A mixture of both uppercase and lowercase letters.
+    #3. A mixture of letters and numbers.
+    #4 Inclusion of at least one special character, e.g., ! @ # ?
+    password_passed = True
+    if(len(password) < 8):
+        print ("Password must be at least 8 characters long")
+        password_passed = False
+    if (not any(char.isupper() for char in password)):
+        print ("Password must contain at least one uppercase letter")
+        password_passed = False
+    if (not any(char.islower() for char in password)):
+        print ("Password must contain at least one lowercase letter")
+        password_passed = False
+    if (not any(char.isdigit() for char in password)):
+        print ("Password must contain at least one number")
+        password_passed = False
+    if (not any(char.isalpha() for char in password)):
+        print ("Password must contain at least one letter")
+        password_passed = False
+    if (not any(char in "!@#?" for char in password)):
+        print ("Password must contain at least one special character")
+        password_passed = False
+    return password_passed
+
 def create_patient(tokens):
     # create_patient <username> <password>
     # check 1: the length for tokens need to be exactly 3 to include all information (with the operation name)
+
     if len(tokens) != 3:
         print("Failed to create user.")
         return
@@ -32,7 +60,12 @@ def create_patient(tokens):
     if username_exists_patient(username):
         print("Username taken, try again!")
         return
+    
+    
 
+    if not passwarod_checker(password):
+        return
+    
     salt = Util.generate_salt()
     hash = Util.generate_hash(password, salt)
 
@@ -92,6 +125,9 @@ def create_caregiver(tokens):
         print("Username taken, try again!")
         return
 
+    if not passwarod_checker(password):
+        return
+    
     salt = Util.generate_salt()
     hash = Util.generate_hash(password, salt)
 
@@ -181,6 +217,7 @@ def login_caregiver(tokens):
         print("Login failed.")
         return
 
+    
     username = tokens[1]
     password = tokens[2]
 
@@ -242,7 +279,7 @@ def search_caregiver_schedule(tokens):
     year = int(date_tokens[2])
     d = datetime.datetime(year, month, day)
 
-        #Check if date is in the format of mm-dd-yyyy
+    #Check if date is in the format of mm-dd-yyyy
     if len(date_tokens) != 3:
         print("Please try again! You need to enter a date in the format mm-dd-yyyy.")
         return
@@ -350,15 +387,15 @@ def reserve(tokens):
         cursor.execute(remove_availability, (caregiver, d))
 
         #generate a 5 digit appointment id
-        appointment_id = Util.generate_appointment_id()
-        print("Appointment ID: " + appointment_id)
+        #appointment_id = Util.generate_appointment_id()
+        #print("Appointment ID: " + appointment_id)
         
         #add the appointment to the database
-        add_appointment = "INSERT INTO Appointments VALUES (%s, %s, %s, %s, %s)"
-        cursor.execute(add_appointment, (appointment_id, current_patient.get_username(), caregiver, d, vaccine))
+        add_appointment = "INSERT INTO Appointments VALUES (%s, %s, %s, %s)"
+        cursor.execute(add_appointment, (current_patient.get_username(), caregiver, d, vaccine))
         conn.commit()
         print("Appointment created!")
-        print("Appointment ID: " + appointment_id + ", Caregiver Username: " + caregiver)
+        #print("Appointment ID: " + appointment_id + ", Caregiver Username: " + caregiver)
     except pymssql.Error:
             print("Please try again! Database error occurred.")
             return
@@ -483,14 +520,17 @@ def show_appointments(tokens):
     
     #if the current user is a patient, fetch all appointments for that patient
     if current_patient is not None:
-        search_appointments = "SELECT Appointmet_ID , Vaccine_Name, Time, Patient_Username FROM Appointments WHERE Patient_Username = %s ORDER BY Appointmet_ID ASC"
+        search_appointments = "SELECT Appointmet_ID , Vaccine_Name, Time, Caregiver_Username FROM Appointments WHERE Patient_Username = %s ORDER BY Appointmet_ID ASC"
         print("Fetching Appointment for" + current_patient.get_username())
 
         try:
             cursor.execute(search_appointments, current_patient.get_username())
             print("Appointments:")
             for row in cursor:
-                print(row)
+                print("Appontment ID | Vaccine Name | Time | Caregiver Username")
+                print(*row)
+                
+                
         except pymssql.Error:
             print("Please try again! Database error occurred.")
             return
@@ -500,13 +540,14 @@ def show_appointments(tokens):
         
     #if the current user is a caregiver, fetch all appointments for that caregiver
     if current_caregiver is not None:
-        search_appointments = "SELECT Appointmet_ID , Vaccine_Name, Time, Caregiver_Username FROM Appointments WHERE Caregiver_Username = %s ORDER BY Appointmet_ID ASC"
+        search_appointments = "SELECT Appointmet_ID , Vaccine_Name, Time, Patient_Username FROM Appointments WHERE Caregiver_Username = %s ORDER BY Appointmet_ID ASC"
         print("Fetching Appointment for " + current_caregiver.get_username())
         try:
             cursor.execute(search_appointments, current_caregiver.get_username())
             print("Appointments:")
             for row in cursor:
-                print(row)
+                print("Appontment ID | Vaccine Name | Time | Patient Username")
+                print(*row)
         except pymssql.Error:
             print("Please try again! Database error occurred.")
             return
@@ -564,7 +605,7 @@ def start():
             print("Please try again!")
             break
 
-        response = response.lower()
+        #response = response.lower()
         tokens = response.split(" ")
         if len(tokens) == 0:
             ValueError("Please try again!")

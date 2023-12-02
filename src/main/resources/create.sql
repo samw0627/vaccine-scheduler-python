@@ -25,7 +25,7 @@ CREATE TABLE Patient (
 );
 
 CREATE TABLE Appointments (
-    Appointmet_ID VARCHAR(100) PRIMARY KEY,
+    Appointmet_ID int IDENTITY(1,1) PRIMARY KEY,
     Patient_Username varchar(255) REFERENCES Patient,
     Caregiver_Username varchar(255) REFERENCES Caregivers,
     Time date,
